@@ -10,7 +10,7 @@ var copyAirportMap [][]int
 var bays []Point
 var currTarget Point
 
-func createEmptyMatrix(dim int) [][]int {
+func CreateEmptyMatrix(dim int) [][]int {
 	matrix := make([][]int, dim)
 	for i := range matrix {
 		matrix[i] = make([]int, dim)
@@ -31,7 +31,8 @@ func init() {
 }
 
 func GetTarget() Point {
-	return bays[rand.Intn(len(bays))]
+	currTarget = bays[rand.Intn(len(bays))]
+	return currTarget
 }
 
 func NextStep(pos, target Point) (Point, error) {
