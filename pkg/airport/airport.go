@@ -1,8 +1,16 @@
 package airport
 
 import (
+	"encoding/json"
 	"errors"
 	"math/rand"
+)
+
+const (
+	X_min float64 = 10
+	X_max float64 = 70
+	Y_min float64 = -30
+	Y_max float64 = 30
 )
 
 func Void() {}
@@ -27,27 +35,53 @@ func CreateEmptyMatrix(dim int) [][]int {
 }
 
 func init() {
-	AirportMap, bays = GenerateRandomMapWithWallsAndBays(10, 10, 10, 5)
+	AirportMap, bays = GenerateRandomMapWithWallsAndBays(60, 60, 10, 5)
 
 	copyAirportMap = AirportMap
 }
 
-func GetTarget() Point {
+func GetTarget(uid string) (Point, error) {
 	currTarget = bays[rand.Intn(len(bays))]
-	return currTarget
+	return currTarget, nil
 }
 
-func NextStep(pos, target Point) (Point, error) {
+func extractLatitudeAndLongitude(jsonData string) (Location, error) {
+	var loc Location
+	err := json.Unmarshal([]byte(jsonData), &loc)
+	if err != nil {
+		return Location{}, &json.UnmarshalTypeError{}
+	}
+
+	return loc, nil
+}
+
+func Gps2D(jsonData string) (Point, error) {
+	loc, _ := extractLatitudeAndLongitude(jsonData)
+
+	if X_min > loc.Latitude || X_max < loc.Latitude || Y_min > loc.Longitude || Y_max < loc.Longitude {
+		loc.Latitude = 11
+		loc.Longitude = -29
+	}
+
+	return Point{int(loc.Latitude/60) * 3, int(loc.Longitude/60) * 3}, nil
+}
+
+func NextStep(pos, target, lastPos Point) (string, error) {
 	path := AStar(copyAirportMap, pos, target)
 
 	if path == nil {
-		return Point{}, errors.New("no path found")
+		return "", errors.New("no path found")
 	}
 
 	copyAirportMap[pos.X][pos.Y] = Wall // Reset previous pos
 
+	next := path[len(path)-1]
 	// Update pos to the next point in the path
-	next := path[len(path)-2] // Index 0 is the current pos
+	if len(path) != 1 {
+		next = path[len(path)-2]
+	}
+	dirVect := Point{next.P.X - pos.X, next.P.Y - pos.Y}
+	dirVectPrev := Point{pos.X - lastPos.X, pos.Y - lastPos.Y}
 
 	// Update pos
 	pos.X = next.P.X
@@ -56,6 +90,13 @@ func NextStep(pos, target Point) (Point, error) {
 	copyAirportMap[pos.X][pos.Y] = Person // Set new pos
 
 	PrintResults(copyAirportMap, pos, target)
-
-	return pos, nil
+	dirString := dirVect.String()
+	endPoint := Point{0, 0}
+	if dirVect == dirVectPrev && dirVect != endPoint {
+		dirString = "CONTINUE FORWARD"
+	}
+	if currTarget == pos {
+		dirString = "ARRIVED"
+	}
+	return dirString, nil
 }
