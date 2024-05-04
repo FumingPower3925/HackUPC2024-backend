@@ -51,10 +51,10 @@ func main() {
 	app.Post("/gps", func(c *fiber.Ctx) error {
 		clientId := c.Params("clientId") // clientId obtained when start
 		newPos := c.Params("location")   // position of the client
-		usr, _ := users[clientId]
-		/*if !ok {
+		usr, ok := users[clientId]
+		if !ok {
 			return fiber.NewError(fiber.StatusUnauthorized, "clientId does not exist")
-		}*/
+		}
 		point, err := airport.Gps2D(newPos)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "gps wrong coords")
@@ -65,6 +65,11 @@ func main() {
 		nstep, err := airport.NextStep(point, usr.target, usr.lastPoint)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "gps wrong coords")
+		}
+		if nstep == "ARRIVED" {
+			c.Set("Arrived", "true")
+		} else {
+			c.Set("Arrived", "false")
 		}
 		path, err := ai.GetCommandVoice(nstep)
 		if err != nil {
