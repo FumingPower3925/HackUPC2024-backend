@@ -17,11 +17,11 @@ const (
 )
 
 type Point struct {
-	x, y int
+	X, Y int
 }
 
 type Node struct {
-	point      Point
+	P          Point
 	f, g, h    float64
 	parent     *Node
 	entityType int
@@ -53,8 +53,8 @@ func (pq *PriorityQueue) Pop() interface{} {
 }
 
 func distance(p1, p2 Point) float64 {
-	dx := p2.x - p1.x
-	dy := p2.y - p1.y
+	dx := p2.X - p1.X
+	dy := p2.Y - p1.Y
 	return math.Sqrt(float64(dx*dx + dy*dy))
 }
 
@@ -63,7 +63,7 @@ func (p Point) neighbors(matrix [][]int) []Point {
 	directions := [4][2]int{{-1, 0}, {1, 0}, {0, -1}, {0, 1}}
 
 	for _, dir := range directions {
-		nx, ny := p.x+dir[0], p.y+dir[1]
+		nx, ny := p.X+dir[0], p.Y+dir[1]
 		if nx >= 0 && nx < len(matrix) && ny >= 0 && ny < len(matrix[0]) {
 			if matrix[nx][ny] != Wall {
 				neighbors = append(neighbors, Point{nx, ny})
@@ -77,7 +77,7 @@ func AStar(matrix [][]int, start, goal Point) []*Node {
 	openSet := make(PriorityQueue, 0)
 	heap.Init(&openSet)
 
-	startNode := &Node{point: start, f: 0, g: 0, h: 0}
+	startNode := &Node{P: start, f: 0, g: 0, h: 0}
 	heap.Push(&openSet, startNode)
 
 	closedSet := make(map[Point]bool)
@@ -86,7 +86,7 @@ func AStar(matrix [][]int, start, goal Point) []*Node {
 	for len(openSet) > 0 {
 		current := heap.Pop(&openSet).(*Node)
 
-		if current.point == goal {
+		if current.P == goal {
 			path := make([]*Node, 0)
 			for current != nil {
 				path = append(path, current)
@@ -95,9 +95,9 @@ func AStar(matrix [][]int, start, goal Point) []*Node {
 			return path
 		}
 
-		closedSet[current.point] = true
+		closedSet[current.P] = true
 
-		for _, neighbor := range current.point.neighbors(matrix) {
+		for _, neighbor := range current.P.neighbors(matrix) {
 			if closedSet[neighbor] {
 				continue
 			}
@@ -113,11 +113,60 @@ func AStar(matrix [][]int, start, goal Point) []*Node {
 
 			if newPath {
 				neighborNode := &Node{
-					point:      neighbor,
+					P:          neighbor,
 					g:          g,
 					h:          distance(neighbor, goal),
 					parent:     current,
-					entityType: matrix[neighbor.x][neighbor.y],
+					entityType: matrix[neighbor.X][neighbor.Y],
+				}
+				heap.Push(&openSet, neighborNode)
+				cameFrom[neighbor] = neighborNode
+			}
+		}
+	}
+
+	return nil
+}
+
+func Dijkstra(matrix [][]int, start, goal Point) []*Node {
+	openSet := make(PriorityQueue, 0)
+	heap.Init(&openSet)
+
+	startNode := &Node{P: start, f: 0, g: 0, h: 0} // f, g, h are not used in Dijkstra's
+	heap.Push(&openSet, startNode)
+
+	closedSet := make(map[Point]bool)
+	cameFrom := make(map[Point]*Node)
+	costs := make(map[Point]float64) // Keep track of the cost to reach each node
+
+	for len(openSet) > 0 {
+		current := heap.Pop(&openSet).(*Node)
+
+		if current.P == goal {
+			path := make([]*Node, 0)
+			for current != nil {
+				path = append(path, current)
+				current = current.parent
+			}
+			return path
+		}
+
+		closedSet[current.P] = true
+
+		for _, neighbor := range current.P.neighbors(matrix) {
+			if closedSet[neighbor] {
+				continue
+			}
+
+			g := current.g + 1 // Assuming each step has a cost of 1
+
+			newCost := g
+			if _, ok := costs[neighbor]; !ok || newCost < costs[neighbor] {
+				costs[neighbor] = newCost
+				neighborNode := &Node{
+					P:      neighbor,
+					g:      newCost,
+					parent: current,
 				}
 				heap.Push(&openSet, neighborNode)
 				cameFrom[neighbor] = neighborNode
@@ -129,7 +178,7 @@ func AStar(matrix [][]int, start, goal Point) []*Node {
 }
 
 // generateRandomMap creates a random map of given size with specified percentage of walls.
-func generateRandomMap(rows, cols, wallPercentage int) [][]int {
+func GenerateRandomMap(rows, cols, wallPercentage int) [][]int {
 	rand.Seed(time.Now().UnixNano())
 
 	// Initialize the map

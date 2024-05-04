@@ -10,10 +10,14 @@ func main() {
 	app := fiber.New()
 
 	app.Get("/test", func(c *fiber.Ctx) error {
-		// var aux [][]airport.Entity = airport.DummyMap()
-		// airport.PrintMatrix(&aux)
-		airport.Test()
-		return c.SendString("true")
+
+		output := "true"
+
+		if !airport.TestLogic() {
+			output = "false"
+		}
+
+		return c.SendString(output)
 	})
 
 	app.Listen(":8080")
