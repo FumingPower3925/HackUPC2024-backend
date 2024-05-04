@@ -3,6 +3,7 @@ package airport
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/rand"
 )
 
@@ -36,12 +37,12 @@ func CreateEmptyMatrix(dim int) [][]int {
 
 func init() {
 	AirportMap, bays = GenerateRandomMapWithWallsAndBays(60, 60, 10, 5)
-
 	copyAirportMap = AirportMap
 }
 
 func GetTarget(uid string) (Point, error) {
 	currTarget = bays[rand.Intn(len(bays))]
+	fmt.Printf("%d %d\n", currTarget.X, currTarget.Y)
 	return currTarget, nil
 }
 
@@ -63,7 +64,7 @@ func Gps2D(jsonData string) (Point, error) {
 		loc.Longitude = -29
 	}
 
-	return Point{int(loc.Latitude/60) * 3, int(loc.Longitude/60) * 3}, nil
+	return Point{int((loc.Latitude - 10) / 3.0 * 60.0), int((loc.Longitude + 30) / 3.0 * 60.0)}, nil
 }
 
 func NextStep(pos, target, lastPos Point) (string, error) {
@@ -73,7 +74,7 @@ func NextStep(pos, target, lastPos Point) (string, error) {
 		return "", errors.New("no path found")
 	}
 
-	copyAirportMap[pos.X][pos.Y] = Wall // Reset previous pos
+	copyAirportMap[lastPos.X][lastPos.Y] = Wall // Reset previous pos
 
 	next := path[len(path)-1]
 	// Update pos to the next point in the path
