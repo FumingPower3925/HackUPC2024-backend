@@ -2,9 +2,9 @@ package airport
 
 import (
 	"container/heap"
+	"fmt"
 	"math"
 	"math/rand"
-	"time"
 )
 
 // Int mapping
@@ -28,6 +28,42 @@ type Node struct {
 }
 
 type PriorityQueue []*Node
+
+func PrintMatrix(matrix [][]int) {
+	for _, row := range matrix {
+		for _, cell := range row {
+			switch cell {
+			case Empty:
+				fmt.Print("-1")
+			case Walkable:
+				fmt.Print("W ")
+			case Wall:
+				fmt.Print("# ")
+			case Person:
+				fmt.Print("P ")
+			case Bay:
+				fmt.Print("B ")
+			}
+		}
+		fmt.Println()
+	}
+}
+
+func PrintResults(matrix [][]int, start Point, goal Point) {
+	fmt.Printf("Matrix: %dx%d\n", len(matrix), len(matrix[0]))
+	PrintMatrix(matrix)
+
+	path := AStar(matrix, start, goal)
+	if path == nil {
+		fmt.Println("No path found")
+	} else {
+		for i := len(path) - 1; i >= 0; i-- {
+			fmt.Printf("(%d,%d) -> ", path[i].P.X, path[i].P.Y)
+		}
+	}
+	fmt.Println()
+	fmt.Println()
+}
 
 func (pq PriorityQueue) Len() int { return len(pq) }
 
@@ -177,33 +213,31 @@ func Dijkstra(matrix [][]int, start, goal Point) []*Node {
 	return nil
 }
 
-// generateRandomMap creates a random map of given size with specified percentage of walls.
-func GenerateRandomMap(rows, cols, wallPercentage int) [][]int {
-	rand.Seed(time.Now().UnixNano())
-
-	// Initialize the map
-	randomMap := make([][]int, rows)
-	for i := range randomMap {
-		randomMap[i] = make([]int, cols)
-	}
-
-	// Calculate the number of walls to add based on the wallPercentage
-	totalCells := rows * cols
-	totalWalls := (totalCells * wallPercentage) / 100
-
-	// Randomly add walls to the map
-	for totalWalls > 0 {
-		row := rand.Intn(rows)
-		col := rand.Intn(cols)
-
-		// Skip if already a wall
-		if randomMap[row][col] == Wall {
-			continue
+func GenerateRandomMapWithWallsAndBays(rows, cols, numWalls, numBays int) ([][]int, []Point) {
+	// Generate an empty map
+	airportMap := make([][]int, rows)
+	for i := range airportMap {
+		airportMap[i] = make([]int, cols)
+		for j := range airportMap[i] {
+			airportMap[i][j] = Walkable
 		}
-
-		randomMap[row][col] = Wall
-		totalWalls--
 	}
 
-	return randomMap
+	// Generate walls
+	for i := 0; i < numWalls; i++ {
+		x := rand.Intn(rows)
+		y := rand.Intn(cols)
+		airportMap[x][y] = Wall
+	}
+
+	// Generate bays and store their locations
+	bays := make([]Point, numBays)
+	for i := 0; i < numBays; i++ {
+		x := rand.Intn(rows)
+		y := rand.Intn(cols)
+		airportMap[x][y] = Bay
+		bays[i] = Point{X: x, Y: y}
+	}
+
+	return airportMap, bays
 }
