@@ -2,7 +2,6 @@ package main
 
 import (
 	"reflect"
-	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -14,9 +13,13 @@ import (
 var users map[string]User
 
 type User struct {
-	target    airport.Point
-	rotation  int
+	target airport.Point
+	//rotation  int
 	lastPoint airport.Point
+}
+
+func init() {
+	users = make(map[string]User)
 }
 
 func main() {
@@ -34,25 +37,22 @@ func main() {
 	})
 
 	app.Get("/start", func(c *fiber.Ctx) error {
-		rot := c.Params("rotation")
-		roti, err := strconv.Atoi(rot)
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "rotation is not a number")
-		}
+		//rot := c.Params("rotation")
+		//roti, _ := strconv.Atoi(rot)
 		uid := uuid.NewString()
 		target, err := airport.GetTarget(uid)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "client has no flight availiable")
 		}
-		users[uid] = User{target: target, rotation: roti}
+		users[uid] = User{target: target, lastPoint: airport.Point{}}
 		return c.SendString(uid)
 	})
 
 	app.Post("/gps", func(c *fiber.Ctx) error {
 		clientId := c.Params("clientId") // clientId obtained when start
 		newPos := c.Params("location")   // position of the client
-		usr, ok := users[clientId]
-		if !ok {
+		usr, notFound := users[clientId]
+		if notFound {
 			return fiber.NewError(fiber.StatusUnauthorized, "clientId does not exist")
 		}
 		point, err := airport.Gps2D(newPos)
