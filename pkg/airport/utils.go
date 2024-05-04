@@ -16,6 +16,11 @@ const (
 	Bay      int = 3
 )
 
+type Location struct {
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
 type Point struct {
 	X, Y int
 }
@@ -240,4 +245,19 @@ func GenerateRandomMapWithWallsAndBays(rows, cols, numWalls, numBays int) ([][]i
 	}
 
 	return airportMap, bays
+}
+
+func (d Point) String() string {
+	switch d {
+	case Point{0, 1}:
+		return "FORWARD"
+	case Point{-1, 0}:
+		return "TURN LEFT"
+	case Point{1, 0}:
+		return "TURN RIGHT"
+	case Point{0, -1}:
+		return "TURN AROUND"
+	default:
+		return "unknown"
+	}
 }

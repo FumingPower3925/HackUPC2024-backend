@@ -19,19 +19,21 @@ func GetCommandVoice(command string) (string, error) {
 	switch command {
 	case "FORWARD":
 		num := strconv.FormatInt(int64(rand.Intn(NUM_FORWARD-MIN)+MIN), 10)
-		return path + "Forward" + num, nil
+		return path + "Forward" + num + ".wav", nil
 	case "CONTINUE FORWARD":
 		num := strconv.FormatInt(int64(rand.Intn(NUM_FORWARD-MIN)+MIN), 10)
-		return path + "ContinueForward" + num, nil
+		return path + "ContinueForward" + num + ".wav", nil
 	case "TURN LEFT":
 		num := strconv.FormatInt(int64(rand.Intn(NUM_FORWARD-MIN)+MIN), 10)
-		return path + "Left" + num, nil
+		return path + "Left" + num + ".wav", nil
 	case "TURN RIGHT":
 		num := strconv.FormatInt(int64(rand.Intn(NUM_FORWARD-MIN)+MIN), 10)
-		return path + "Right" + num, nil
+		return path + "Right" + num + ".wav", nil
 	case "TURN AROUND":
 		num := strconv.FormatInt(int64(rand.Intn(NUM_FORWARD-MIN)+MIN), 10)
-		return path + "TurnAround" + num, nil
+		return path + "TurnAround" + num + ".wav", nil
+	case "ARRIVED":
+		return path + "Arrived" + ".wav", nil
 	default:
 		return "", errors.New("command not supported")
 	}
