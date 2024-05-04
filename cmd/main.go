@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 
 	"github.com/gofiber/fiber/v2"
@@ -49,13 +50,14 @@ func main() {
 	})
 
 	app.Post("/gps", func(c *fiber.Ctx) error {
-		clientId := c.Params("clientId") // clientId obtained when start
-		newPos := c.Params("location")   // position of the client
-		usr, notFound := users[clientId]
-		if notFound {
+		clientId := c.Get("clientId") // clientId obtained when start
+		newPos := c.Get("location")   // position of the client
+		usr, ok := users[clientId]
+		if !ok {
 			return fiber.NewError(fiber.StatusUnauthorized, "clientId does not exist")
 		}
 		point, err := airport.Gps2D(newPos)
+		fmt.Printf("In Post: %d %d\n", usr.target.X, usr.target.Y)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "gps wrong coords")
 		}
