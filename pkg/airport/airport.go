@@ -5,6 +5,8 @@ import (
 	"math/rand"
 )
 
+func Void() {}
+
 var AirportMap [][]int
 var copyAirportMap [][]int
 var bays []Point
