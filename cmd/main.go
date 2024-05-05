@@ -69,9 +69,9 @@ func main() {
 			return fiber.NewError(fiber.StatusBadRequest, "gps wrong coords")
 		}
 		if nstep == "ARRIVED" {
-			c.Set("Arrived", "true")
+			c.Set("X-Arrived", "true")
 		} else {
-			c.Set("Arrived", "false")
+			c.Set("X-Arrived", "false")
 		}
 		path, err := ai.GetCommandVoice(nstep)
 		if err != nil {
