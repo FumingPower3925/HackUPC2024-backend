@@ -87,5 +87,47 @@ func main() {
 		return c.SendFile(path)
 	})
 
+	// Endpoint to upload and receive a WAV file
+	app.Post("/upload", func(c *fiber.Ctx) error {
+		// Receive the file
+		file, err := c.FormFile("audio")
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString("Upload failed")
+		}
+
+		/*
+			clientId := c.Get("clientId") // clientId obtained when start
+			_, ok := users[clientId]
+			if !ok {
+				return fiber.NewError(fiber.StatusUnauthorized, "clientId does not exist")
+			}
+		*/
+
+		path := "./tmp/" + file.Filename
+		// Save the file to the server
+		err = c.SaveFile(file, path)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Could not save file")
+		}
+
+		request, err := ai.Speech2Text(path)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("S2T Failure")
+		}
+
+		response, err := ai.GetResponse(request)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("GPT Failure")
+		}
+
+		output, err := ai.GetAudio(response)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+		}
+		return c.SendFile(output)
+	})
+
+	ai.GetResponse("I am arriving late to the flight")
+
 	app.Listen(":8080")
 }

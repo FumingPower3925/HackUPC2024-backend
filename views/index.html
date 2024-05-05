@@ -2,12 +2,13 @@
 <html>
   <head>
     <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="/public/index.css">
   </head>  
   <body>
     <audio id="startSound" src="/public/Start.wav" preload="auto" style="display: none;"></audio>
     <div id="uid" style="display: none"></div>
     <div id="location" hx-post="/gps" hx-trigger="sendGPS" hx-vals='{"clientId": "", "location": "", "rotation": ""}' style="display: none"></div>
-    <button onclick="startGPS()" type="button" id="startButton" hx-get="/start" hx-trigger="click" hx-target="#uid" hx-vals='{"rotation": ""}'>Start</button> 
+
     <div class="p-3 mb-2 bg-secondary" id="demo-div">
       <h4 style="margin-top:0.75rem;">Orientations</h4>
       <ul>
@@ -15,6 +16,18 @@
         <li>Y-axis (&gamma;): <span id="Orientation_g">0</span><span>&deg;</span></li>
         <li>Z-axis (&alpha;): <span id="Orientation_a">0</span><span>&deg;</span></li>
       </ul>
+      <h4 style="margin-top:0.75rem;">Position</h4>
+      <ul>
+        <li>Latitude (&location_latitude;): <span id="Position_x">0</span><span>&deg;</span></li>
+        <li>Longitude (&location_longitude;): <span id="Position_z">0</span><span>&deg;</span></li>
+      </ul>
+    </div>
+
+    <div class="center">
+      <div class="welcome">Welcome to WayFinder!</div>
+      <button onclick="startGPS()" type="button" id="startButton" hx-get="/start" hx-trigger="click" hx-target="#uid" hx-vals='{"rotation": ""}'>Start</button> 
+      <button class="recordButton" id="recordButton">Record</button>
+    </div>
 
     <script>
       document.getElementById("uid")
@@ -48,7 +61,7 @@
         updateFieldIfNotNull('Orientation_g', event.gamma);
       }
 
-      function updateFieldIfNotNull(fieldName, value, precision=1) {
+      function updateFieldIfNotNull(fieldName, value, precision=7) {
         if (value != null)
           document.getElementById(fieldName).innerHTML = value.toFixed(precision);
         if (fieldName == 'typee'){
@@ -71,6 +84,10 @@
                 location_longitude: position.coords.longitude
               }
               data.location = estructura
+              console.log(estructura)
+
+              updateFieldIfNotNull('Position_x', position.coords.latitude);
+              updateFieldIfNotNull('Position_z', position.coords.longitude);
 
               let headers = new Headers(data);
               // Create a fetch request with custom headers
@@ -117,6 +134,85 @@
             console.error("Geolocation is not supported by this browser.");
           }
       }
+
+      let isRecording = false;
+// Variables to handle audio recording and chunks
+let mediaRecorder;
+let audioChunks = [];
+
+// Get the button element by its ID
+const recordButton = document.getElementById("recordButton");
+
+// Event handler for the button click
+recordButton.addEventListener("click", async () => {
+if (!isRecording) {
+  // Start recording
+  recordButton.style.backgroundColor = "red";
+  recordButton.textContent = "Stop";
+
+  try {
+    // Request access to the microphone
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    // Create a media recorder with the audio stream
+    mediaRecorder = new MediaRecorder(stream);
+
+    // Handle data available events
+    mediaRecorder.ondataavailable = event => {
+      audioChunks.push(event.data);
+    };
+
+    // Start recording
+    mediaRecorder.start();
+    isRecording = true;
+
+    // Handle stop event
+    mediaRecorder.onstop = async () => {
+      // Combine audio chunks into a single Blob
+      const audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+
+      // Play the recorded audio back to the user
+      const audioURL = URL.createObjectURL(audioBlob);
+      const audioElement = new Audio(audioURL);
+
+      // Reset audio chunks for the next recording
+      audioChunks = [];
+
+      // Send the audio data to the server
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.wav");
+
+      try {
+        const response = await fetch("/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (response.ok) {
+          let blob = await response.blob();
+          let url = URL.createObjectURL(blob);
+
+          // Play the recorded audio back to the user
+          const audioElement = new Audio(url);
+          audioElement.play();
+        } else {
+          console.log("Failed to send audio.");
+        }
+    } catch (error) {
+      console.log("Error sending audio: ", error);
+    }
+  };
+} catch (error) {
+  console.error("Error accessing microphone: ", error);
+}
+} else {
+    // Stop recording
+    mediaRecorder.stop();
+    recordButton.style.backgroundColor = "green";
+    recordButton.textContent = "Record";
+    isRecording = false;
+}
+});
     </script>
   </body>
 </html>
