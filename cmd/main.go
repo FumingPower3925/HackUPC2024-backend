@@ -27,6 +27,8 @@ func init() {
 func main() {
 	app := fiber.New()
 
+	app.Static("/public/", "./public")
+
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.SendFile("./views/index.html")
 	})

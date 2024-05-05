@@ -4,6 +4,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
   </head>  
   <body>
+    <audio id="startSound" src="/public/Start.wav" preload="auto" style="display: none;"></audio>
     <div id="uid" style="display: none"></div>
     <div id="location" hx-post="/gps" hx-trigger="sendGPS" hx-vals='{"clientId": "", "location": "", "rotation": ""}' style="display: none"></div>
     <button onclick="startGPS()" type="button" id="startButton" hx-get="/start" hx-trigger="click" hx-target="#uid" hx-vals='{"rotation": ""}'>Start</button> 
@@ -110,6 +111,7 @@
                 maximumAge: 0 // Maximum age of a cached location that is acceptable
               });
             }, 7500); // Interval set to 5 seconds
+            document.getElementById('startSound').play();
           } else {
             // Geolocation is not supported
             console.error("Geolocation is not supported by this browser.");
