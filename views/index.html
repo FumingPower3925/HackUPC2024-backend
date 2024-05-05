@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
+  </head>  
+  <body>
+    <div id="uid" style="display: none"></div>
+    <div id="location" hx-post="/gps" hx-trigger="sendGPS" hx-vals='{"clientId": "", "location": "", "rotation": ""}' style="display: none"></div>
+    <button onclick="startGPS()" type="button" id="startButton" hx-get="/start" hx-trigger="click" hx-target="#uid" hx-vals='{"rotation": ""}'>Start</button> 
+    <div class="p-3 mb-2 bg-secondary" id="demo-div">
+      <h4 style="margin-top:0.75rem;">Orientations</h4>
+      <ul>
+        <li>X-axis (&beta;): <span id="Orientation_b">0</span><span>&deg;</span></li>
+        <li>Y-axis (&gamma;): <span id="Orientation_g">0</span><span>&deg;</span></li>
+        <li>Z-axis (&alpha;): <span id="Orientation_a">0</span><span>&deg;</span></li>
+      </ul>
+
+    <script>
+      document.getElementById("uid")
+      var butt = document.getElementById('startButton');
+      var loc = document.getElementById('location');
+      var id
+      window.addEventListener("deviceorientation", handleOrientation); 
+
+      var data = {
+          'location': 'Value1',
+          'rotation': 'Value2',
+          'clientId': null
+      }
+
+      document.body.addEventListener('htmx:afterSwap', function(evt) {
+          data.clientId = evt.detail.target.innerHTML;
+          removeEventListener('htmx:afterSwap', this);
+      });
+
+      function handleOrientation(event) {
+        const orientationData = {
+          alpha: event.alpha,
+          beta: event.beta,
+          gamma: event.gamma
+        };
+
+        // Update the rotation value
+        data.rotation = orientationData
+        updateFieldIfNotNull('Orientation_a', event.alpha);
+        updateFieldIfNotNull('Orientation_b', event.beta);
+        updateFieldIfNotNull('Orientation_g', event.gamma);
+      }
+
+      function updateFieldIfNotNull(fieldName, value, precision=1) {
+        if (value != null)
+          document.getElementById(fieldName).innerHTML = value.toFixed(precision);
+        if (fieldName == 'typee'){
+          if (value != null)
+          document.getElementById(fieldName).innerHTML = 20;
+          else
+          document.getElementById(fieldName).innerHTML = 19;
+        }
+      }     
+
+      function startGPS() {
+
+        if ("geolocation" in navigator) {
+        // Geolocation is supported
+          setInterval(function() {
+            navigator.geolocation.getCurrentPosition(function(position) {
+
+              var estructura = {
+                location_latitude: position.coords.latitude,
+                location_longitude: position.coords.longitude
+              }
+              data.location = estructura
+
+              let headers = new Headers(data);
+              // Create a fetch request with custom headers
+              fetch('/gps', { method: 'POST', headers: headers })
+                  .then(response => {
+                      // Check and print the boolean header
+                      const arrived = response.headers.get('X-Arrived');
+                      if (arrived) {
+                          console.log("Congratulations, you reached the target");
+                          navigator.geolocation.clearWatch(id);
+                      }
+                      // Check if the response is OK and handle the audio content
+                      if (response.ok) {
+                          return response.blob();  // Convert the audio content to a blob
+                      } else {
+                          throw new Error('Failed to fetch the audio');
+                      }
+                  })
+              .then(blob => {
+                // Create a URL for the blob
+                const audioUrl = URL.createObjectURL(blob);
+
+                // Create an audio element and play the audio
+                const audio = new Audio(audioUrl);
+                audio.play()
+                    .then(() => console.log('Audio is playing...'))
+                    .catch(e => console.error('Error playing audio:', e));
+                })
+                .catch(error => {
+                    console.error('Error in fetching or playing audio:', error);
+                });
+              }, function(error) {
+                // Error handling
+                console.error("Error occurred: " + error.message);
+              }, {
+                enableHighAccuracy: false, // Request high accuracy
+                timeout: 10000, // Maximum time allowed to try obtaining location
+                maximumAge: 0 // Maximum age of a cached location that is acceptable
+              });
+            }, 7500); // Interval set to 5 seconds
+          } else {
+            // Geolocation is not supported
+            console.error("Geolocation is not supported by this browser.");
+          }
+      }
+    </script>
+  </body>
+</html>
