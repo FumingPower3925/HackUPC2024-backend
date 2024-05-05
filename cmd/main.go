@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -14,8 +15,8 @@ import (
 var users map[string]User
 
 type User struct {
-	target airport.Point
-	//rotation  int
+	target    airport.Point
+	rotation  int
 	lastPoint airport.Point
 }
 
@@ -25,6 +26,10 @@ func init() {
 
 func main() {
 	app := fiber.New()
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendFile("./views/index.html")
+	})
 
 	app.Get("/test", func(c *fiber.Ctx) error {
 
@@ -38,14 +43,14 @@ func main() {
 	})
 
 	app.Get("/start", func(c *fiber.Ctx) error {
-		//rot := c.Params("rotation")
-		//roti, _ := strconv.Atoi(rot)
+		rot := c.Get("rotation")
+		roti, _ := strconv.Atoi(rot)
 		uid := uuid.NewString()
 		target, err := airport.GetTarget(uid)
 		if err != nil {
 			return fiber.NewError(fiber.StatusBadRequest, "client has no flight availiable")
 		}
-		users[uid] = User{target: target, lastPoint: airport.Point{}}
+		users[uid] = User{target: target, lastPoint: airport.Point{}, rotation: roti}
 		return c.SendString(uid)
 	})
 
